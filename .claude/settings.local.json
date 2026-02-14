@@ -1,7 +1,18 @@
 {
   "permissions": {
     "allow": [
-      "Bash(git init:*)"
+      "Bash(git init:*)",
+      "Bash(bunx tsc:*)",
+      "Bash(gh pr view:*)",
+      "Bash(gh pr diff:*)",
+      "WebSearch",
+      "WebFetch(domain:cuelinks.docs.apiary.io)",
+      "WebFetch(domain:www.cuelinks.com)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:www.coupomated.com)",
+      "WebFetch(domain:www.scribd.com)",
+      "WebFetch(domain:www.shoutmeloud.com)",
+      "WebFetch(domain:ai.google.dev)"
     ]
   }
 }

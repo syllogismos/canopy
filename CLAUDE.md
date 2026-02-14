@@ -22,6 +22,7 @@ The agent plans and executes multi-step workflows (not just chat), showing its r
 ## Development Approach
 
 Test-driven development (TDD) — write tests before implementation. Use Bun's built-in test runner.
+Never run the servers yourself, they are already running in a seperate terminal
 
 ## Expected Commands
 
@@ -31,6 +32,21 @@ bun run dev                    # start dev (likely turbo or concurrent server+we
 bun run --cwd apps/server src/index.ts   # run backend
 bun run --cwd apps/web dev     # run frontend (vite)
 ```
+
+## Typecheck & Build
+
+Use `bunx` (not `npx`) to run TypeScript and Vite. `cd` into each app directory first.
+
+```bash
+# Typecheck
+cd apps/web && bunx tsc --noEmit       # typecheck frontend
+cd apps/server && bunx tsc --noEmit    # typecheck server (ignore pre-existing bun-types error)
+
+# Build
+cd apps/web && bunx vite build         # production build frontend
+```
+
+**Note:** The server has a pre-existing `TS2688: Cannot find type definition file for 'bun-types'` error in its tsconfig — this is not a real failure and can be ignored.
 
 ## Architecture
 

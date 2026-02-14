@@ -34,3 +34,6 @@ coverage/
 # temp
 *.tmp
 *.temp
+
+# persisted traces
+apps/server/traces/
