@@ -89,18 +89,12 @@ export function DebugTracePage() {
                 />
               </svg>
             </div>
-            <h1
-              className="text-xs font-semibold tracking-tight text-gray-200"
-              style={{ fontFamily: "'JetBrains Mono', monospace" }}
-            >
+            <h1 className="text-xs font-semibold tracking-tight text-gray-200 font-mono">
               Debug Trace Viewer
             </h1>
           </div>
         </div>
-        <span
-          className="text-[10px] text-gray-600 tabular-nums"
-          style={{ fontFamily: "'JetBrains Mono', monospace" }}
-        >
+        <span className="text-[10px] text-gray-600 tabular-nums font-mono">
           {traces.length} trace{traces.length !== 1 ? "s" : ""}
         </span>
       </header>
@@ -110,10 +104,7 @@ export function DebugTracePage() {
         {/* ─── Left: Trace list ─── */}
         <div className="w-[340px] shrink-0 border-r border-white/[0.06] flex flex-col">
           <div className="px-4 py-2.5 border-b border-white/[0.04] flex items-center justify-between">
-            <span
-              className="text-[10px] font-medium tracking-widest uppercase text-gray-500"
-              style={{ fontFamily: "'JetBrains Mono', monospace" }}
-            >
+            <span className="text-[10px] font-medium tracking-widest uppercase text-gray-500 font-mono">
               Sessions
             </span>
           </div>
@@ -172,21 +163,13 @@ export function DebugTracePage() {
                       {/* Row 1: ID + timestamp */}
                       <div className="flex items-center justify-between mb-1">
                         <span
-                          className={`text-[11px] tabular-nums ${
+                          className={`text-[11px] tabular-nums font-mono ${
                             active ? "text-cyan-300/90" : "text-gray-400"
                           }`}
-                          style={{
-                            fontFamily: "'JetBrains Mono', monospace",
-                          }}
                         >
                           {t.traceId.slice(0, 8)}
                         </span>
-                        <span
-                          className="text-[10px] text-gray-600 tabular-nums"
-                          style={{
-                            fontFamily: "'JetBrains Mono', monospace",
-                          }}
-                        >
+                        <span className="text-[10px] text-gray-600 tabular-nums font-mono">
                           {relativeTime(t.timestamp)}
                         </span>
                       </div>
@@ -205,31 +188,16 @@ export function DebugTracePage() {
                           <div
                             className={`w-1.5 h-1.5 rounded-full ${status.dot}`}
                           />
-                          <span
-                            className="text-[10px] text-gray-500"
-                            style={{
-                              fontFamily: "'JetBrains Mono', monospace",
-                            }}
-                          >
+                          <span className="text-[10px] text-gray-500 font-mono">
                             {status.label}
                           </span>
                         </div>
                         <span className="text-gray-800">·</span>
-                        <span
-                          className="text-[10px] text-gray-500 tabular-nums"
-                          style={{
-                            fontFamily: "'JetBrains Mono', monospace",
-                          }}
-                        >
+                        <span className="text-[10px] text-gray-500 tabular-nums font-mono">
                           {t.eventCount} evt
                         </span>
                         <span className="text-gray-800">·</span>
-                        <span
-                          className="text-[10px] text-gray-500 tabular-nums"
-                          style={{
-                            fontFamily: "'JetBrains Mono', monospace",
-                          }}
-                        >
+                        <span className="text-[10px] text-gray-500 tabular-nums font-mono">
                           {formatDuration(t.durationMs)}
                         </span>
                       </div>
@@ -247,30 +215,15 @@ export function DebugTracePage() {
             <>
               <div className="px-5 py-2.5 border-b border-white/[0.04] flex items-center justify-between shrink-0">
                 <div className="flex items-center gap-2">
-                  <span
-                    className="text-[10px] font-medium tracking-widest uppercase text-gray-500"
-                    style={{
-                      fontFamily: "'JetBrains Mono', monospace",
-                    }}
-                  >
+                  <span className="text-[10px] font-medium tracking-widest uppercase text-gray-500 font-mono">
                     Trace
                   </span>
-                  <span
-                    className="text-[11px] text-cyan-300/70 tabular-nums"
-                    style={{
-                      fontFamily: "'JetBrains Mono', monospace",
-                    }}
-                  >
+                  <span className="text-[11px] text-cyan-300/70 tabular-nums font-mono">
                     {selectedId.slice(0, 8)}
                   </span>
                 </div>
                 {!loadingEvents && (
-                  <span
-                    className="text-[10px] text-gray-600 tabular-nums"
-                    style={{
-                      fontFamily: "'JetBrains Mono', monospace",
-                    }}
-                  >
+                  <span className="text-[10px] text-gray-600 tabular-nums font-mono">
                     {events.length} events
                   </span>
                 )}
@@ -325,10 +278,7 @@ export function DebugTracePage() {
                   />
                 </svg>
               </div>
-              <p
-                className="text-[11px] text-gray-600 leading-relaxed max-w-[200px]"
-                style={{ fontFamily: "'JetBrains Mono', monospace" }}
-              >
+              <p className="text-[11px] text-gray-600 leading-relaxed max-w-[200px] font-mono">
                 Select a trace from the list to inspect its events
               </p>
             </div>

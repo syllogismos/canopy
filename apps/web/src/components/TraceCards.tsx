@@ -27,7 +27,7 @@ function StartCard({ event }: { event: Extract<TraceEvent, { type: "trace:start"
   return (
     <div className="animate-[fadeSlideUp_0.25s_ease-out] flex items-center gap-2 px-3 py-2 text-[11px] text-gray-500">
       <div className="w-1 h-1 rounded-full bg-gray-600" />
-      <span style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+      <span className="font-mono">
         Agent run started
       </span>
       <span className="text-gray-700">·</span>
@@ -43,10 +43,7 @@ function ThinkingCard({ event }: { event: Extract<TraceEvent, { type: "trace:thi
         <Badge color="violet">THINKING</Badge>
         <IterationBadge iteration={event.iteration} />
       </div>
-      <div
-        className="px-3 pb-3 text-xs text-violet-200/70 leading-relaxed whitespace-pre-wrap break-words"
-        style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "11px" }}
-      >
+      <div className="px-3 pb-3 text-[11px] text-violet-200/70 leading-relaxed whitespace-pre-wrap break-words font-mono">
         {event.text}
       </div>
     </div>
@@ -79,10 +76,7 @@ function ToolCallCard({ event }: { event: Extract<TraceEvent, { type: "trace:too
             ))}
           </div>
         ) : (
-          <pre
-            className="text-[11px] text-cyan-200/60 leading-relaxed overflow-x-auto"
-            style={{ fontFamily: "'JetBrains Mono', monospace" }}
-          >
+          <pre className="text-[11px] text-cyan-200/60 leading-relaxed overflow-x-auto font-mono">
             {JSON.stringify(event.args, null, 2)}
           </pre>
         )}
@@ -105,7 +99,7 @@ function ToolResultCard({ event }: { event: Extract<TraceEvent, { type: "trace:t
       <div className="flex items-center gap-2 px-3 pt-2.5 pb-1.5">
         <Badge color={event.isError ? "red" : "emerald"}>{event.isError ? "ERROR" : event.name}</Badge>
         {event.durationMs > 0 && (
-          <span className="text-[10px] text-gray-500 tabular-nums" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+          <span className="text-[10px] text-gray-500 tabular-nums font-mono">
             {event.durationMs}ms
           </span>
         )}
@@ -119,10 +113,9 @@ function ToolResultCard({ event }: { event: Extract<TraceEvent, { type: "trace:t
           <SourcesList sources={result.sources} />
         ) : (
           <pre
-            className={`text-[11px] leading-relaxed overflow-x-auto ${
+            className={`text-[11px] leading-relaxed overflow-x-auto font-mono ${
               event.isError ? "text-red-300/70" : "text-emerald-200/60"
             }`}
-            style={{ fontFamily: "'JetBrains Mono', monospace" }}
           >
             {JSON.stringify(result, null, 2)}
           </pre>
@@ -151,10 +144,7 @@ function ErrorCard({ event }: { event: Extract<TraceEvent, { type: "trace:error"
       <div className="flex items-center gap-2 px-3 pt-2.5 pb-1.5">
         <Badge color="red">ERROR</Badge>
       </div>
-      <div
-        className="px-3 pb-3 text-[11px] text-red-300/80 leading-relaxed"
-        style={{ fontFamily: "'JetBrains Mono', monospace" }}
-      >
+      <div className="px-3 pb-3 text-[11px] text-red-300/80 leading-relaxed font-mono">
         {event.message}
       </div>
     </div>
@@ -171,11 +161,11 @@ function EndCard({ event }: { event: Extract<TraceEvent, { type: "trace:end" }> 
   return (
     <div className="animate-[fadeSlideUp_0.25s_ease-out] flex items-center gap-2 px-3 py-2 text-[11px] text-gray-500 border-t border-white/[0.04] mt-1">
       <div className="w-1 h-1 rounded-full bg-gray-600" />
-      <span style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+      <span className="font-mono">
         Completed in {event.totalIterations} {event.totalIterations === 1 ? "step" : "steps"}
       </span>
       <span className="text-gray-700">·</span>
-      <span className="tabular-nums" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+      <span className="tabular-nums font-mono">
         {event.durationMs < 1000
           ? `${event.durationMs}ms`
           : `${(event.durationMs / 1000).toFixed(1)}s`}
@@ -199,8 +189,7 @@ const colorMap: Record<string, string> = {
 function Badge({ color, children }: { color: string; children: React.ReactNode }) {
   return (
     <span
-      className={`inline-flex px-1.5 py-0.5 rounded text-[10px] font-semibold tracking-wider uppercase ${colorMap[color] ?? colorMap.cyan}`}
-      style={{ fontFamily: "'JetBrains Mono', monospace" }}
+      className={`inline-flex px-1.5 py-0.5 rounded text-[10px] font-semibold tracking-wider uppercase font-mono ${colorMap[color] ?? colorMap.cyan}`}
     >
       {children}
     </span>
@@ -209,10 +198,7 @@ function Badge({ color, children }: { color: string; children: React.ReactNode }
 
 function IterationBadge({ iteration }: { iteration: number }) {
   return (
-    <span
-      className="text-[10px] text-gray-600 tabular-nums"
-      style={{ fontFamily: "'JetBrains Mono', monospace" }}
-    >
+    <span className="text-[10px] text-gray-600 tabular-nums font-mono">
       #{iteration}
     </span>
   );
@@ -225,7 +211,7 @@ function ComparisonTable({ data }: { data: { title: string; columns: string[]; r
     <div className="space-y-2">
       <div className="text-[11px] font-medium text-emerald-200/80">{data.title}</div>
       <div className="overflow-x-auto rounded-lg border border-emerald-500/10">
-        <table className="w-full text-[11px]" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+        <table className="w-full text-[11px] font-mono">
           <thead>
             <tr className="border-b border-emerald-500/10">
               {data.columns.map((col, i) => (

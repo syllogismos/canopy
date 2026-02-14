@@ -5,6 +5,7 @@ import { Server as SocketIOServer } from "socket.io";
 import type {
   ServerToClientEvents,
   ClientToServerEvents,
+  TraceEvent,
 } from "@canopy/shared";
 import { gemini, FLASH_MODEL } from "./gemini";
 import { runReactLoop } from "./agent/react-loop";
@@ -105,7 +106,7 @@ io.on("connection", (socket) => {
     const traceId = crypto.randomUUID();
     console.log(`[${traceId}] User message: ${message.text}`);
 
-    const emit = (event: import("@canopy/shared").TraceEvent) => {
+    const emit = (event: TraceEvent) => {
       traceStore.add(event);
       appendTraceEvent(event).catch((err) =>
         console.error(`[trace-writer] Failed to write event:`, err)

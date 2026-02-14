@@ -22,15 +22,12 @@ export function ReasoningPanel({ traceEvents, isProcessing }: ReasoningPanelProp
       <div className="px-5 py-3 border-b border-white/[0.06] flex items-center justify-between">
         <div className="flex items-center gap-2.5">
           <div className={`w-2 h-2 rounded-full ${isProcessing ? "bg-amber-400 animate-pulse" : "bg-gray-600"}`} />
-          <span
-            className="text-xs font-medium tracking-widest uppercase text-gray-400"
-            style={{ fontFamily: "'JetBrains Mono', 'Fira Code', monospace" }}
-          >
+          <span className="text-xs font-medium tracking-widest uppercase text-gray-400 font-mono">
             Reasoning Trace
           </span>
         </div>
         {traceEvents.length > 0 && (
-          <span className="text-[10px] text-gray-600 tabular-nums" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+          <span className="text-[10px] text-gray-600 tabular-nums font-mono">
             {traceEvents.length} events
           </span>
         )}

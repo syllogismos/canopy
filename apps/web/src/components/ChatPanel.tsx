@@ -79,10 +79,7 @@ function EmptyState() {
         <div className="absolute inset-0 w-20 h-20 rounded-full bg-amber-500/5 blur-xl" />
       </div>
 
-      <h2
-        className="text-lg font-semibold text-gray-200 mb-3 tracking-tight"
-        style={{ fontFamily: "'DM Sans', system-ui, sans-serif" }}
-      >
+      <h2 className="text-lg font-semibold text-gray-200 mb-3 tracking-tight font-sans">
         What can I help you with?
       </h2>
       <p className="text-sm text-gray-500 leading-relaxed max-w-xs">

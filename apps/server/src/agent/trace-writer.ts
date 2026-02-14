@@ -74,7 +74,7 @@ export async function readTraceFile(
   traceId: string
 ): Promise<TraceEvent[] | null> {
   const files = await readdir(TRACES_DIR);
-  const match = files.find((f) => f.startsWith(traceId));
+  const match = files.find((f) => f.startsWith(traceId + "_"));
   if (!match) return null;
 
   const content = await readFile(join(TRACES_DIR, match), "utf-8");

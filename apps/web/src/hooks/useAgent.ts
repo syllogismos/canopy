@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { socket } from "../socket";
 import type { TraceEvent } from "@canopy/shared";
 
@@ -14,7 +14,6 @@ export function useAgent() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [traceEvents, setTraceEvents] = useState<TraceEvent[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
-  const currentTraceId = useRef<string | null>(null);
 
   useEffect(() => {
     const onTraceEvent = (event: TraceEvent) => {
@@ -23,7 +22,7 @@ export function useAgent() {
       if (event.type === "trace:start") {
         setIsProcessing(true);
       }
-      if (event.type === "trace:end" || event.type === "trace:error") {
+      if (event.type === "trace:end") {
         setIsProcessing(false);
       }
     };
@@ -74,7 +73,6 @@ export function useAgent() {
       { id, role: "user", text, timestamp: Date.now() },
     ]);
     setTraceEvents([]);
-    currentTraceId.current = id;
     socket.emit("user:message", { id, text, timestamp: Date.now() });
   }, []);
 

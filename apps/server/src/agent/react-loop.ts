@@ -267,7 +267,7 @@ export async function runReactLoop({
     const modelContent: Content = candidate?.content ?? {
       role: "model",
       parts: functionCalls.map((fc) => ({
-        functionCall: { name: fc.name!, args: fc.args },
+        functionCall: { name: fc.name ?? "unknown", args: fc.args },
       })),
     };
     messages.push(modelContent);
@@ -276,7 +276,7 @@ export async function runReactLoop({
     const functionResponseParts: Part[] = [];
 
     for (const fc of functionCalls) {
-      const name = fc.name!;
+      const name = fc.name ?? "unknown";
       const args = (fc.args as Record<string, unknown>) ?? {};
 
       emit(
