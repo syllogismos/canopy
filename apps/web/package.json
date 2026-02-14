@@ -9,10 +9,11 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@canopy/shared": "workspace:*",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "socket.io-client": "^4.8.1",
-    "@canopy/shared": "workspace:*"
+    "react-router-dom": "^7.13.0",
+    "socket.io-client": "^4.8.1"
   },
   "devDependencies": {
     "@types/react": "^19.0.0",

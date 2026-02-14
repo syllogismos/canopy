@@ -9,6 +9,12 @@ import type {
 import { gemini, FLASH_MODEL } from "./gemini";
 import { runReactLoop } from "./agent/react-loop";
 import { traceStore } from "./agent/trace";
+import {
+  ensureTracesDir,
+  appendTraceEvent,
+  listTraceFiles,
+  readTraceFile,
+} from "./agent/trace-writer";
 
 const app = new Hono();
 
@@ -32,8 +38,23 @@ app.get("/health/gemini", async (c) => {
   }
 });
 
-// Debug endpoints for trace inspection
+// Debug endpoints for trace inspection (in-memory)
 app.get("/api/traces", (c) => c.json(traceStore.list()));
+
+// Persisted JSONL trace endpoints (must register before :traceId param route)
+app.get("/api/traces/files", async (c) => {
+  const files = await listTraceFiles();
+  return c.json(files);
+});
+
+app.get("/api/traces/files/:traceId", async (c) => {
+  const { traceId } = c.req.param();
+  const events = await readTraceFile(traceId);
+  if (!events) {
+    return c.json({ error: "Trace file not found" }, 404);
+  }
+  return c.json({ traceId, events });
+});
 
 app.get("/api/traces/:traceId", (c) => {
   const { traceId } = c.req.param();
@@ -43,6 +64,9 @@ app.get("/api/traces/:traceId", (c) => {
   }
   return c.json({ traceId, events });
 });
+
+// Ensure traces directory exists before starting
+await ensureTracesDir();
 
 const PORT = Number(process.env.PORT) || 3001;
 
@@ -71,6 +95,9 @@ io.on("connection", (socket) => {
 
     const emit = (event: import("@canopy/shared").TraceEvent) => {
       traceStore.add(event);
+      appendTraceEvent(event).catch((err) =>
+        console.error(`[trace-writer] Failed to write event:`, err)
+      );
       socket.emit("trace:event", event);
     };
 

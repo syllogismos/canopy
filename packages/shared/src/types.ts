@@ -79,3 +79,14 @@ export interface ClientToServerEvents {
   ping: () => void;
   "user:message": (message: UserMessage) => void;
 }
+
+/** Metadata for a persisted JSONL trace file */
+export interface TraceFileMeta {
+  filename: string;
+  traceId: string;
+  timestamp: number;
+  eventCount: number;
+  userMessage?: string;
+  status?: "completed" | "max_iterations" | "error";
+  durationMs?: number;
+}
