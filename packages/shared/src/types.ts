@@ -107,6 +107,7 @@ export interface ClientToServerEvents {
   "user:message": (message: UserMessage) => void;
   "user:answer": (data: UserAnswerPayload) => void;
   "language:set": (data: { language: string }) => void;
+  "session:reset": () => void;
 }
 
 /** Metadata for a persisted JSONL trace file */

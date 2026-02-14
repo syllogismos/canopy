@@ -29,6 +29,7 @@ export function useAgent() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [pendingQuestion, setPendingQuestion] = useState<PendingQuestion | null>(null);
   const [language, setLanguageState] = useState(() => localStorage.getItem("canopy:language") || "auto");
+  const [sessionId, setSessionId] = useState(0);
 
   // Accumulate structured results from trace events keyed by traceId.
   // This ref is filled as trace:tool_result events arrive (before agent:message).
@@ -148,7 +149,7 @@ export function useAgent() {
       socket.off("agent:error", onAgentError);
       socket.off("agent:ask_user", onAskUser);
     };
-  }, []);
+  }, [sessionId]);
 
   const sendMessage = useCallback((text: string) => {
     const id = crypto.randomUUID();
@@ -174,6 +175,18 @@ export function useAgent() {
     };
     socket.on("connect", syncLanguage);
     return () => { socket.off("connect", syncLanguage); };
+  }, []);
+
+  const resetSession = useCallback(() => {
+    socket.emit("session:reset");
+    setSessionId((prev) => prev + 1);
+    setMessages([]);
+    setTraceEvents([]);
+    setActiveTraceEvents([]);
+    setIsProcessing(false);
+    setPendingQuestion(null);
+    pendingStructured.current.clear();
+    pendingTraceEvents.current.clear();
   }, []);
 
   const answerQuestion = useCallback((eventId: string, answer: string) => {
@@ -206,5 +219,5 @@ export function useAgent() {
     );
   }, []);
 
-  return { messages, traceEvents, activeTraceEvents, isProcessing, pendingQuestion, sendMessage, answerQuestion, language, setLanguage };
+  return { messages, traceEvents, activeTraceEvents, isProcessing, pendingQuestion, sendMessage, answerQuestion, resetSession, language, setLanguage };
 }

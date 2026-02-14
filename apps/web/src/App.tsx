@@ -22,7 +22,7 @@ const LANGUAGES = [
 
 export default function App() {
   const [connected, setConnected] = useState(false);
-  const { messages, activeTraceEvents, isProcessing, pendingQuestion, sendMessage, answerQuestion, language, setLanguage } = useAgent();
+  const { messages, activeTraceEvents, isProcessing, pendingQuestion, sendMessage, answerQuestion, resetSession, language, setLanguage } = useAgent();
 
   useEffect(() => {
     socket.connect();
@@ -54,6 +54,17 @@ export default function App() {
           <span className="text-[10px] text-gray-600 font-mono">v0.1</span>
         </div>
         <div className="flex items-center gap-4">
+          {messages.length > 0 && (
+            <button
+              onClick={resetSession}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-400 bg-gray-900 border border-white/[0.08] rounded-lg hover:text-white hover:border-red-500/50 hover:bg-red-500/10 transition-colors"
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18 6L6 18M6 6l12 12" />
+              </svg>
+              End Session
+            </button>
+          )}
           <select
             value={language}
             onChange={(e) => setLanguage(e.target.value)}

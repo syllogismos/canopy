@@ -112,6 +112,7 @@ io.on("connection", (socket) => {
 
   const waitForUserAnswer = createWaitForUserAnswer(socket);
   let selectedLanguage: string | undefined;
+  let activeAbortController: AbortController | null = null;
 
   socket.on("language:set", (data) => {
     selectedLanguage = data.language;
@@ -135,10 +136,18 @@ io.on("connection", (socket) => {
       return;
     }
 
+    // Abort any previous in-flight request
+    if (activeAbortController) {
+      activeAbortController.abort();
+    }
+    const abortController = new AbortController();
+    activeAbortController = abortController;
+
     const traceId = crypto.randomUUID();
     console.log(`[${traceId}] User message: ${message.text}`);
 
     const emit = (event: TraceEvent) => {
+      if (abortController.signal.aborted) return;
       traceStore.add(event);
       appendTraceEvent(event).catch((err) =>
         console.error(`[trace-writer] Failed to write event:`, err)
@@ -166,15 +175,35 @@ io.on("connection", (socket) => {
         emit,
         waitForUserAnswer,
         language: selectedLanguage,
+        signal: abortController.signal,
       });
-      socket.emit("agent:message", { traceId, text, structuredResults });
+      if (!abortController.signal.aborted) {
+        socket.emit("agent:message", { traceId, text, structuredResults });
+      }
     } catch (err: any) {
+      if (err.name === "AbortError" || abortController.signal.aborted) {
+        console.log(`[${traceId}] Aborted (session reset)`);
+        return;
+      }
       console.error(`[${traceId}] Error:`, err);
       socket.emit("agent:error", {
         traceId,
         message: err.message ?? "Unknown error",
       });
+    } finally {
+      if (activeAbortController === abortController) {
+        activeAbortController = null;
+      }
     }
+  });
+
+  socket.on("session:reset", () => {
+    console.log(`[${socket.id}] Session reset`);
+    if (activeAbortController) {
+      activeAbortController.abort();
+      activeAbortController = null;
+    }
+    selectedLanguage = undefined;
   });
 
   socket.on("disconnect", () => {

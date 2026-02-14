@@ -75,6 +75,7 @@ interface RunReactLoopParams {
   emit: (event: TraceEvent) => void;
   waitForUserAnswer: (eventId: string) => Promise<string>;
   language?: string;
+  signal?: AbortSignal;
 }
 
 interface ReActResult {
@@ -85,10 +86,22 @@ interface ReActResult {
 export async function runReactLoop({
   userMessage,
   traceId,
-  emit,
+  emit: rawEmit,
   waitForUserAnswer,
   language,
+  signal,
 }: RunReactLoopParams): Promise<ReActResult> {
+  // Wrap emit to silently drop events after abort
+  const emit = (event: TraceEvent) => {
+    if (signal?.aborted) return;
+    rawEmit(event);
+  };
+
+  const checkAborted = () => {
+    if (signal?.aborted) {
+      throw new DOMException("Session aborted", "AbortError");
+    }
+  };
   const messages: Content[] = [
     { role: "user", parts: [{ text: userMessage }] },
   ];
@@ -111,6 +124,8 @@ export async function runReactLoop({
   let consecutiveEmptyResponses = 0;
 
   for (let iteration = 0; iteration < MAX_ITERATIONS; iteration++) {
+    checkAborted();
+
     // Validate turn alternation before calling the API
     validateTurnAlternation(messages);
 
@@ -286,6 +301,8 @@ export async function runReactLoop({
     const functionResponseParts: Part[] = [];
 
     for (const fc of functionCalls) {
+      checkAborted();
+
       const name = fc.name ?? "unknown";
       const args = (fc.args as Record<string, unknown>) ?? {};
 
