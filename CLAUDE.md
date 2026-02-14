@@ -22,6 +22,7 @@ The agent plans and executes multi-step workflows (not just chat), showing its r
 ## Development Approach
 
 Test-driven development (TDD) — write tests before implementation. Use Bun's built-in test runner.
+Never run the servers yourself, they are already running in a seperate terminal
 
 ## Expected Commands
 

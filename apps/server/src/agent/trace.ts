@@ -1,14 +1,19 @@
 import type { TraceEvent } from "@canopy/shared";
 
+/** Distributes Omit over each member of a union */
+type DistributiveOmit<T, K extends keyof any> = T extends any
+  ? Omit<T, K>
+  : never;
+
 /** Create a trace event with auto-generated eventId and timestamp */
-export function createTraceEvent<T extends TraceEvent>(
-  base: Omit<T, "eventId" | "timestamp"> & { type: T["type"] }
-): T {
+export function createTraceEvent(
+  base: DistributiveOmit<TraceEvent, "eventId" | "timestamp">
+): TraceEvent {
   return {
     ...base,
     eventId: crypto.randomUUID(),
     timestamp: Date.now(),
-  } as T;
+  } as TraceEvent;
 }
 
 /** In-memory store for recent trace runs (last 100) */

@@ -1,4 +1,5 @@
-import type { Content, Part } from "@google/genai";
+import { ThinkingLevel } from "@google/genai";
+import type { Content, GenerateContentResponse, Part } from "@google/genai";
 import type { TraceEvent } from "@canopy/shared";
 import { gemini, FLASH_MODEL } from "../gemini";
 import { SYSTEM_PROMPT } from "./system-prompt";
@@ -7,6 +8,66 @@ import { toolDeclarations } from "../tools";
 import { executeTool } from "../tools/executor";
 
 const MAX_ITERATIONS = 10;
+const MAX_RETRIES = 3;
+const MAX_EMPTY_RESPONSES = 2;
+
+// --- Retry helpers ---
+
+function isRetryableError(err: any): boolean {
+  const status = err?.status ?? err?.statusCode ?? err?.code;
+  if ([429, 500, 503].includes(status)) return true;
+  const code = err?.code ?? err?.cause?.code;
+  if (
+    typeof code === "string" &&
+    ["ECONNRESET", "ETIMEDOUT", "ENOTFOUND", "UND_ERR_CONNECT_TIMEOUT"].includes(code)
+  )
+    return true;
+  return false;
+}
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function callGeminiWithRetry(
+  params: Parameters<typeof gemini.models.generateContent>[0],
+  opts: { traceId: string; iteration: number; emit: (e: TraceEvent) => void }
+): Promise<GenerateContentResponse> {
+  for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+    try {
+      return await gemini.models.generateContent(params);
+    } catch (err: any) {
+      if (attempt < MAX_RETRIES - 1 && isRetryableError(err)) {
+        const backoffMs = 1000 * 2 ** attempt; // 1s, 2s, 4s
+        opts.emit(
+          createTraceEvent({
+            type: "trace:error",
+            traceId: opts.traceId,
+            iteration: opts.iteration,
+            message: `Retryable error (attempt ${attempt + 1}/${MAX_RETRIES}): ${err.message ?? "unknown"}. Retrying in ${backoffMs}ms…`,
+          })
+        );
+        await delay(backoffMs);
+        continue;
+      }
+      throw err;
+    }
+  }
+  // Unreachable but satisfies TypeScript
+  throw new Error("Retry loop exited unexpectedly");
+}
+
+// --- Turn alternation validation ---
+
+function validateTurnAlternation(messages: Content[]): void {
+  for (let i = 1; i < messages.length; i++) {
+    if (messages[i].role === messages[i - 1].role) {
+      throw new Error(
+        `Turn alternation violated: consecutive "${messages[i].role}" at indices ${i - 1} and ${i}`
+      );
+    }
+  }
+}
 
 interface RunReactLoopParams {
   userMessage: string;
@@ -36,24 +97,32 @@ export async function runReactLoop({
     })
   );
 
+  let consecutiveEmptyResponses = 0;
+
   for (let iteration = 0; iteration < MAX_ITERATIONS; iteration++) {
+    // Validate turn alternation before calling the API
+    validateTurnAlternation(messages);
+
     let response;
     try {
-      response = await gemini.models.generateContent({
-        model: FLASH_MODEL,
-        contents: messages,
-        config: {
-          systemInstruction: SYSTEM_PROMPT,
-          tools: [
-            { functionDeclarations: toolDeclarations },
-            { googleSearch: {} },
-          ],
-          thinkingConfig: {
-            includeThoughts: true,
-            thinkingLevel: "HIGH",
+      response = await callGeminiWithRetry(
+        {
+          model: FLASH_MODEL,
+          contents: messages,
+          config: {
+            systemInstruction: SYSTEM_PROMPT,
+            tools: [
+              { functionDeclarations: toolDeclarations },
+              { googleSearch: {} },
+            ],
+            thinkingConfig: {
+              includeThoughts: true,
+              thinkingLevel: ThinkingLevel.HIGH,
+            },
           },
         },
-      });
+        { traceId, iteration, emit }
+      );
     } catch (err: any) {
       emit(
         createTraceEvent({
@@ -126,8 +195,49 @@ export async function runReactLoop({
     const functionCalls = response.functionCalls;
 
     if (!functionCalls || functionCalls.length === 0) {
-      // No tool calls — this is the final response
+      // No tool calls — check for empty response
       const text = response.text ?? "";
+
+      if (text.trim() === "") {
+        consecutiveEmptyResponses++;
+        if (consecutiveEmptyResponses >= MAX_EMPTY_RESPONSES) {
+          emit(
+            createTraceEvent({
+              type: "trace:error",
+              traceId,
+              iteration,
+              message: `Model returned ${MAX_EMPTY_RESPONSES} consecutive empty responses. Stopping.`,
+            })
+          );
+          emit(
+            createTraceEvent({
+              type: "trace:end",
+              traceId,
+              iteration,
+              totalIterations: iteration + 1,
+              durationMs: Date.now() - startTime,
+              status: "error",
+            })
+          );
+          return "I wasn't able to generate a response. Please try rephrasing your question.";
+        }
+
+        // Push the model's empty content + a nudge, then continue
+        if (candidate?.content) {
+          messages.push(candidate.content);
+        } else {
+          messages.push({ role: "model", parts: [{ text: "" }] });
+        }
+        messages.push({
+          role: "user",
+          parts: [{ text: "Please continue and provide your answer." }],
+        });
+        continue;
+      }
+
+      // Non-empty text — reset counter and return
+      consecutiveEmptyResponses = 0;
+
       emit(
         createTraceEvent({
           type: "trace:text",
@@ -149,10 +259,18 @@ export async function runReactLoop({
       return text;
     }
 
-    // Append the model's response (with function calls) to messages
-    if (candidate?.content) {
-      messages.push(candidate.content);
-    }
+    // Function calls present — reset empty counter
+    consecutiveEmptyResponses = 0;
+
+    // Append the model's response (with function calls) to messages.
+    // Synthesize content from function calls if candidate.content is missing.
+    const modelContent: Content = candidate?.content ?? {
+      role: "model",
+      parts: functionCalls.map((fc) => ({
+        functionCall: { name: fc.name!, args: fc.args },
+      })),
+    };
+    messages.push(modelContent);
 
     // Execute each tool call
     const functionResponseParts: Part[] = [];
@@ -172,7 +290,16 @@ export async function runReactLoop({
       );
 
       const toolStart = Date.now();
-      const { result, isError } = executeTool(name, args);
+      let result: unknown;
+      let isError: boolean;
+
+      try {
+        ({ result, isError } = executeTool(name, args));
+      } catch (toolErr: any) {
+        result = { error: `Tool execution failed: ${toolErr.message ?? "unknown error"}` };
+        isError = true;
+      }
+
       const durationMs = Date.now() - toolStart;
 
       emit(
@@ -190,7 +317,7 @@ export async function runReactLoop({
       functionResponseParts.push({
         functionResponse: {
           name,
-          response: result as object,
+          response: result as Record<string, unknown>,
         },
       });
     }

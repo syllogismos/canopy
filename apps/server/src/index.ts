@@ -89,7 +89,19 @@ io.on("connection", (socket) => {
     console.log(`Ping from ${socket.id}`);
   });
 
+  socket.on("error", (err) => {
+    console.error(`[socket] Error on ${socket.id}:`, err.message);
+  });
+
   socket.on("user:message", async (message) => {
+    if (!message || typeof message.text !== "string" || message.text.trim() === "") {
+      socket.emit("agent:error", {
+        traceId: "validation",
+        message: "Message text is required",
+      });
+      return;
+    }
+
     const traceId = crypto.randomUUID();
     console.log(`[${traceId}] User message: ${message.text}`);
 
@@ -120,4 +132,8 @@ io.on("connection", (socket) => {
   socket.on("disconnect", () => {
     console.log(`Client disconnected: ${socket.id}`);
   });
+});
+
+io.engine.on("connection_error", (err: any) => {
+  console.error(`[socket.io] Connection error:`, err.message);
 });
