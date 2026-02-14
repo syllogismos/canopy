@@ -106,6 +106,7 @@ export interface ClientToServerEvents {
   ping: () => void;
   "user:message": (message: UserMessage) => void;
   "user:answer": (data: UserAnswerPayload) => void;
+  "language:set": (data: { language: string }) => void;
 }
 
 /** Metadata for a persisted JSONL trace file */

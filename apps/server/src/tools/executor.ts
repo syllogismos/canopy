@@ -28,6 +28,28 @@ export async function executeTool(
       return { result: { text, sources }, isError: false };
     }
 
+    case "nearby_search": {
+      const query = args.query as string;
+      if (!query)
+        return { result: { error: "Missing required field: query" }, isError: true };
+
+      const response = await gemini.models.generateContent({
+        model: FLASH_MODEL,
+        contents: [{ role: "user", parts: [{ text: query }] }],
+        config: {
+          tools: [{ googleSearch: {} }],
+        },
+      });
+
+      const text = response.text ?? "";
+      const sources =
+        response.candidates?.[0]?.groundingMetadata?.groundingChunks?.map(
+          (chunk: any) => ({ title: chunk.web?.title, uri: chunk.web?.uri })
+        ) ?? [];
+
+      return { result: { text, sources }, isError: false };
+    }
+
     case "compare_items": {
       if (!args.title || !args.columns || !args.rows) {
         return {

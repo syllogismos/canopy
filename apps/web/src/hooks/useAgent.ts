@@ -28,6 +28,7 @@ export function useAgent() {
   const [activeTraceEvents, setActiveTraceEvents] = useState<TraceEvent[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [pendingQuestion, setPendingQuestion] = useState<PendingQuestion | null>(null);
+  const [language, setLanguageState] = useState(() => localStorage.getItem("canopy:language") || "auto");
 
   // Accumulate structured results from trace events keyed by traceId.
   // This ref is filled as trace:tool_result events arrive (before agent:message).
@@ -159,6 +160,22 @@ export function useAgent() {
     socket.emit("user:message", { id, text, timestamp: Date.now() });
   }, []);
 
+  const setLanguage = useCallback((lang: string) => {
+    setLanguageState(lang);
+    localStorage.setItem("canopy:language", lang);
+    socket.emit("language:set", { language: lang });
+  }, []);
+
+  // Send language preference when socket connects/reconnects
+  useEffect(() => {
+    const syncLanguage = () => {
+      const stored = localStorage.getItem("canopy:language") || "auto";
+      socket.emit("language:set", { language: stored });
+    };
+    socket.on("connect", syncLanguage);
+    return () => { socket.off("connect", syncLanguage); };
+  }, []);
+
   const answerQuestion = useCallback((eventId: string, answer: string) => {
     socket.emit("user:answer", { eventId, answer });
     setPendingQuestion(null);
@@ -189,5 +206,5 @@ export function useAgent() {
     );
   }, []);
 
-  return { messages, traceEvents, activeTraceEvents, isProcessing, pendingQuestion, sendMessage, answerQuestion };
+  return { messages, traceEvents, activeTraceEvents, isProcessing, pendingQuestion, sendMessage, answerQuestion, language, setLanguage };
 }

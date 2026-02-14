@@ -3,9 +3,26 @@ import { socket } from "./socket";
 import { useAgent } from "./hooks/useAgent";
 import { ChatPanel } from "./components/ChatPanel";
 
+const LANGUAGES = [
+  { code: "auto", label: "Auto-detect" },
+  { code: "Telugu", label: "తెలుగు (Telugu)" },
+  { code: "Hindi", label: "हिन्दी (Hindi)" },
+  { code: "Tamil", label: "தமிழ் (Tamil)" },
+  { code: "Kannada", label: "ಕನ್ನಡ (Kannada)" },
+  { code: "Malayalam", label: "മലയാളം (Malayalam)" },
+  { code: "Bengali", label: "বাংলা (Bengali)" },
+  { code: "Marathi", label: "मराठी (Marathi)" },
+  { code: "Gujarati", label: "ગુજરાતી (Gujarati)" },
+  { code: "Punjabi", label: "ਪੰਜਾਬੀ (Punjabi)" },
+  { code: "Odia", label: "ଓଡ଼ିଆ (Odia)" },
+  { code: "Assamese", label: "অসমীয়া (Assamese)" },
+  { code: "Urdu", label: "اردو (Urdu)" },
+  { code: "English", label: "English" },
+];
+
 export default function App() {
   const [connected, setConnected] = useState(false);
-  const { messages, activeTraceEvents, isProcessing, pendingQuestion, sendMessage, answerQuestion } = useAgent();
+  const { messages, activeTraceEvents, isProcessing, pendingQuestion, sendMessage, answerQuestion, language, setLanguage } = useAgent();
 
   useEffect(() => {
     socket.connect();
@@ -36,13 +53,27 @@ export default function App() {
           </div>
           <span className="text-[10px] text-gray-600 font-mono">v0.1</span>
         </div>
-        <div className="flex items-center gap-2">
-          <div
-            className={`w-1.5 h-1.5 rounded-full ${connected ? "bg-emerald-400" : "bg-red-400"}`}
-          />
-          <span className="text-[11px] text-gray-500 font-mono">
-            {connected ? "connected" : "disconnected"}
-          </span>
+        <div className="flex items-center gap-4">
+          <select
+            value={language}
+            onChange={(e) => setLanguage(e.target.value)}
+            className="bg-gray-900 border border-white/[0.08] rounded-lg px-3 py-1.5 text-xs text-gray-300 font-medium outline-none focus:border-amber-500/50 hover:border-white/[0.15] transition-colors cursor-pointer appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2212%22%20height%3D%2212%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%236b7280%22%20stroke-width%3D%222%22%3E%3Cpath%20d%3D%22M6%209l6%206%206-6%22%2F%3E%3C%2Fsvg%3E')] bg-[length:12px] bg-[right_8px_center] bg-no-repeat pr-7"
+          >
+            {LANGUAGES.map((lang) => (
+              <option key={lang.code} value={lang.code}>
+                {lang.label}
+              </option>
+            ))}
+          </select>
+
+          <div className="flex items-center gap-2">
+            <div
+              className={`w-1.5 h-1.5 rounded-full ${connected ? "bg-emerald-400" : "bg-red-400"}`}
+            />
+            <span className="text-[11px] text-gray-500 font-mono">
+              {connected ? "connected" : "disconnected"}
+            </span>
+          </div>
         </div>
       </header>
 

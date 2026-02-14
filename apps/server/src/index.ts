@@ -111,6 +111,12 @@ io.on("connection", (socket) => {
   socket.emit("connection:ack", { status: "connected" });
 
   const waitForUserAnswer = createWaitForUserAnswer(socket);
+  let selectedLanguage: string | undefined;
+
+  socket.on("language:set", (data) => {
+    selectedLanguage = data.language;
+    console.log(`[${socket.id}] Language set to: ${data.language}`);
+  });
 
   socket.on("ping", () => {
     console.log(`Ping from ${socket.id}`);
@@ -159,6 +165,7 @@ io.on("connection", (socket) => {
         traceId,
         emit,
         waitForUserAnswer,
+        language: selectedLanguage,
       });
       socket.emit("agent:message", { traceId, text, structuredResults });
     } catch (err: any) {

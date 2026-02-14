@@ -2,7 +2,7 @@ import { ThinkingLevel } from "@google/genai";
 import type { Content, GenerateContentResponse, Part } from "@google/genai";
 import type { TraceEvent } from "@canopy/shared";
 import { gemini, FLASH_MODEL } from "../gemini";
-import { SYSTEM_PROMPT } from "./system-prompt";
+import { getSystemPrompt } from "./system-prompt";
 import { createTraceEvent } from "./trace";
 import { toolDeclarations } from "../tools";
 import { executeTool } from "../tools/executor";
@@ -74,6 +74,7 @@ interface RunReactLoopParams {
   traceId: string;
   emit: (event: TraceEvent) => void;
   waitForUserAnswer: (eventId: string) => Promise<string>;
+  language?: string;
 }
 
 interface ReActResult {
@@ -86,6 +87,7 @@ export async function runReactLoop({
   traceId,
   emit,
   waitForUserAnswer,
+  language,
 }: RunReactLoopParams): Promise<ReActResult> {
   const messages: Content[] = [
     { role: "user", parts: [{ text: userMessage }] },
@@ -119,7 +121,7 @@ export async function runReactLoop({
           model: FLASH_MODEL,
           contents: messages,
           config: {
-            systemInstruction: SYSTEM_PROMPT,
+            systemInstruction: getSystemPrompt(language),
             tools: [
               { functionDeclarations: toolDeclarations },
             ],

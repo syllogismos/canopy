@@ -118,9 +118,28 @@ export const askUserDeclaration: FunctionDeclaration = {
   },
 };
 
+/** Nearby search tool — delegates to a separate Gemini call with Google Maps grounding */
+export const nearbySearchDeclaration: FunctionDeclaration = {
+  name: "nearby_search",
+  description:
+    "Find nearby places and services using Google Maps. Use this to find hospitals, restaurants, banks, ATMs, petrol pumps, government offices, or any place/service near a given location.",
+  parameters: {
+    type: Type.OBJECT,
+    properties: {
+      query: {
+        type: Type.STRING,
+        description:
+          "The search query including the place type and location (e.g. 'hospitals near Koramangala Bangalore', 'ATMs near Connaught Place Delhi')",
+      },
+    },
+    required: ["query"],
+  },
+};
+
 /** All tool declarations for the ReAct loop */
 export const toolDeclarations: FunctionDeclaration[] = [
   webSearchDeclaration,
+  nearbySearchDeclaration,
   compareItemsDeclaration,
   createChecklistDeclaration,
   askUserDeclaration,
