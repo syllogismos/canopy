@@ -8,7 +8,7 @@ if (!apiKey) {
 export const gemini = new GoogleGenAI({ apiKey });
 
 /** Flash model for planning + function-calling with visible reasoning */
-export const FLASH_MODEL = "gemini-2.5-flash-preview-05-20";
+export const FLASH_MODEL = "gemini-3-flash-preview";
 
 /** Pro model fallback */
-export const PRO_MODEL = "gemini-2.5-pro-preview-05-06";
+export const PRO_MODEL = "gemini-3-pro-preview";
