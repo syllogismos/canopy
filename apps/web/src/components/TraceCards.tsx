@@ -14,6 +14,8 @@ export function TraceCard({ event }: { event: TraceEvent }) {
       return <TextCard event={event} />;
     case "trace:error":
       return <ErrorCard event={event} />;
+    case "trace:ask_user":
+      return <AskUserCard event={event} />;
     case "trace:end":
       return <EndCard event={event} />;
     default:
@@ -179,6 +181,55 @@ function EndCard({ event }: { event: Extract<TraceEvent, { type: "trace:end" }> 
       </span>
       <span className="text-gray-700">·</span>
       <span className={statusColors[event.status]}>{event.status}</span>
+    </div>
+  );
+}
+
+function AskUserCard({ event }: { event: Extract<TraceEvent, { type: "trace:ask_user" }> }) {
+  const answered = !!event.answer;
+
+  return (
+    <div
+      className={`animate-[fadeSlideUp_0.25s_ease-out] rounded-xl border overflow-hidden ${
+        answered
+          ? "border-emerald-500/10 bg-emerald-500/[0.04]"
+          : "border-amber-500/10 bg-amber-500/[0.04]"
+      }`}
+    >
+      <div className="flex items-center gap-2 px-3 pt-2.5 pb-1.5">
+        <Badge color={answered ? "emerald" : "amber"}>
+          {answered ? "ANSWERED" : "ASKING USER"}
+        </Badge>
+        {!answered && (
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500" />
+          </span>
+        )}
+        <IterationBadge iteration={event.iteration} />
+      </div>
+      <div className="px-3 pb-3 space-y-2">
+        <div className={`text-[11px] leading-relaxed ${answered ? "text-emerald-200/70" : "text-amber-200/80"}`}>
+          <span className="font-medium">Q:</span> {event.question}
+        </div>
+        {event.options && event.options.length > 0 && !answered && (
+          <div className="flex flex-wrap gap-1.5">
+            {event.options.map((opt, i) => (
+              <span
+                key={i}
+                className="px-2 py-0.5 rounded-md bg-amber-500/10 text-[10px] text-amber-300/70"
+              >
+                {opt}
+              </span>
+            ))}
+          </div>
+        )}
+        {answered && (
+          <div className="text-[11px] text-emerald-300/80 leading-relaxed">
+            <span className="font-medium">A:</span> {event.answer}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

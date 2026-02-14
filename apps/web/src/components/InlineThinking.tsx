@@ -12,7 +12,7 @@ export function InlineThinking({ events }: InlineThinkingProps) {
 
   const statusLine = getStatusLine(events);
   const displayEvents = events.filter(
-    (e) => e.type === "trace:thinking" || e.type === "trace:tool_call" || e.type === "trace:tool_result"
+    (e) => e.type === "trace:thinking" || e.type === "trace:tool_call" || e.type === "trace:tool_result" || e.type === "trace:ask_user"
   );
 
   return (
@@ -51,7 +51,7 @@ export function MessageTraceToggle({ events }: { events: TraceEvent[] }) {
   const [expanded, setExpanded] = useState(false);
 
   const displayEvents = events.filter(
-    (e) => e.type === "trace:thinking" || e.type === "trace:tool_call" || e.type === "trace:tool_result"
+    (e) => e.type === "trace:thinking" || e.type === "trace:tool_call" || e.type === "trace:tool_result" || e.type === "trace:ask_user"
   );
 
   if (displayEvents.length === 0) return null;
@@ -136,6 +136,21 @@ function CompactTraceItem({ event }: { event: TraceEvent }) {
           )}
         </div>
       );
+    case "trace:ask_user":
+      return (
+        <div
+          className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-lg ${
+            event.answer
+              ? "bg-emerald-500/[0.06] border border-emerald-500/10"
+              : "bg-amber-500/[0.06] border border-amber-500/10"
+          }`}
+        >
+          <QuestionIcon answered={!!event.answer} />
+          <span className={`text-[11px] truncate ${event.answer ? "text-emerald-300/80" : "text-amber-300/80"}`}>
+            {event.answer ? `${event.question} → ${event.answer}` : event.question}
+          </span>
+        </div>
+      );
     default:
       return null;
   }
@@ -146,6 +161,9 @@ function CompactTraceItem({ event }: { event: TraceEvent }) {
 function getStatusLine(events: TraceEvent[]): string {
   for (let i = events.length - 1; i >= 0; i--) {
     const e = events[i];
+    if (e.type === "trace:ask_user") {
+      return "Waiting for your answer...";
+    }
     if (e.type === "trace:tool_call") {
       return `Searching: ${getToolLabel(e)}`;
     }
@@ -231,6 +249,16 @@ function ErrorIcon() {
   return (
     <svg width="10" height="10" viewBox="0 0 16 16" fill="none" className="text-red-400/60 shrink-0">
       <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function QuestionIcon({ answered }: { answered: boolean }) {
+  return (
+    <svg width="10" height="10" viewBox="0 0 16 16" fill="none" className={`${answered ? "text-emerald-400/60" : "text-amber-400/60"} shrink-0`}>
+      <circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="2" />
+      <path d="M6 6.5a2 2 0 1 1 2 2v1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+      <circle cx="8" cy="12" r="0.75" fill="currentColor" />
     </svg>
   );
 }

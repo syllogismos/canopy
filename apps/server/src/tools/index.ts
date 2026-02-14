@@ -84,9 +84,44 @@ export const webSearchDeclaration: FunctionDeclaration = {
   },
 };
 
+/** Ask the user a clarifying question mid-execution */
+export const askUserDeclaration: FunctionDeclaration = {
+  name: "ask_user",
+  description:
+    "Ask the user a clarifying question and wait for their response. Use this when you need specific information to proceed (e.g., origin city, travel date, budget, preferences). Ask early, before doing expensive searches.",
+  parameters: {
+    type: Type.OBJECT,
+    properties: {
+      question: {
+        type: Type.STRING,
+        description: "The question to ask the user",
+      },
+      type: {
+        type: Type.STRING,
+        description:
+          "Question type: 'select' for 2-5 mutually exclusive options, 'multi_select' for picking multiple, 'text' for open-ended answers, 'confirm' for yes/no",
+        enum: ["select", "multi_select", "text", "confirm"],
+      },
+      options: {
+        type: Type.ARRAY,
+        items: { type: Type.STRING },
+        description:
+          "Choices for select/multi_select types (e.g. ['AC 3-Tier', 'Sleeper', 'General']). Not needed for text/confirm.",
+      },
+      placeholder: {
+        type: Type.STRING,
+        description:
+          "Hint text for free-text input (e.g. 'Enter city name'). Only used for text type.",
+      },
+    },
+    required: ["question", "type"],
+  },
+};
+
 /** All tool declarations for the ReAct loop */
 export const toolDeclarations: FunctionDeclaration[] = [
   webSearchDeclaration,
   compareItemsDeclaration,
   createChecklistDeclaration,
+  askUserDeclaration,
 ];

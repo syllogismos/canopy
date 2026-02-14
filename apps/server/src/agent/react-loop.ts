@@ -73,6 +73,7 @@ interface RunReactLoopParams {
   userMessage: string;
   traceId: string;
   emit: (event: TraceEvent) => void;
+  waitForUserAnswer: (eventId: string) => Promise<string>;
 }
 
 interface ReActResult {
@@ -84,6 +85,7 @@ export async function runReactLoop({
   userMessage,
   traceId,
   emit,
+  waitForUserAnswer,
 }: RunReactLoopParams): Promise<ReActResult> {
   const messages: Content[] = [
     { role: "user", parts: [{ text: userMessage }] },
@@ -299,11 +301,38 @@ export async function runReactLoop({
       let result: unknown;
       let isError: boolean;
 
-      try {
-        ({ result, isError } = await executeTool(name, args));
-      } catch (toolErr: any) {
-        result = { error: `Tool execution failed: ${toolErr.message ?? "unknown error"}` };
-        isError = true;
+      if (name === "ask_user") {
+        const question = (args.question as string) ?? "Can you clarify?";
+        const questionType = (args.type as string) ?? "text";
+        const options = args.options as string[] | undefined;
+        const placeholder = args.placeholder as string | undefined;
+
+        const askEvent = createTraceEvent({
+          type: "trace:ask_user",
+          traceId,
+          iteration,
+          question,
+          questionType: questionType as "select" | "multi_select" | "text" | "confirm",
+          options,
+          placeholder,
+        });
+        emit(askEvent);
+
+        try {
+          const answer = await waitForUserAnswer(askEvent.eventId);
+          result = { answer };
+          isError = false;
+        } catch (err: any) {
+          result = { error: err.message ?? "User did not respond" };
+          isError = true;
+        }
+      } else {
+        try {
+          ({ result, isError } = await executeTool(name, args));
+        } catch (toolErr: any) {
+          result = { error: `Tool execution failed: ${toolErr.message ?? "unknown error"}` };
+          isError = true;
+        }
       }
 
       const durationMs = Date.now() - toolStart;

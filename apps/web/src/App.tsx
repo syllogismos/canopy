@@ -5,7 +5,7 @@ import { ChatPanel } from "./components/ChatPanel";
 
 export default function App() {
   const [connected, setConnected] = useState(false);
-  const { messages, activeTraceEvents, isProcessing, sendMessage } = useAgent();
+  const { messages, activeTraceEvents, isProcessing, pendingQuestion, sendMessage, answerQuestion } = useAgent();
 
   useEffect(() => {
     socket.connect();
@@ -51,7 +51,9 @@ export default function App() {
           messages={messages}
           activeTraceEvents={activeTraceEvents}
           isProcessing={isProcessing}
+          pendingQuestion={pendingQuestion}
           onSendMessage={sendMessage}
+          onAnswerQuestion={answerQuestion}
         />
       </main>
     </div>

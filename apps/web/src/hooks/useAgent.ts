@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { socket } from "../socket";
-import type { TraceEvent } from "@canopy/shared";
+import type { TraceEvent, AskUserPayload } from "@canopy/shared";
 
 export interface ChatMessage {
   id: string;
@@ -12,11 +12,22 @@ export interface ChatMessage {
   timestamp: number;
 }
 
+export interface PendingQuestion {
+  eventId: string;
+  traceId: string;
+  question: string;
+  questionType: "select" | "multi_select" | "text" | "confirm";
+  options?: string[];
+  placeholder?: string;
+  timestamp: number;
+}
+
 export function useAgent() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [traceEvents, setTraceEvents] = useState<TraceEvent[]>([]);
   const [activeTraceEvents, setActiveTraceEvents] = useState<TraceEvent[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [pendingQuestion, setPendingQuestion] = useState<PendingQuestion | null>(null);
 
   // Accumulate structured results from trace events keyed by traceId.
   // This ref is filled as trace:tool_result events arrive (before agent:message).
@@ -51,6 +62,7 @@ export function useAgent() {
       }
       if (event.type === "trace:end") {
         setIsProcessing(false);
+        setPendingQuestion(null);
       }
     };
 
@@ -98,16 +110,42 @@ export function useAgent() {
       pendingTraceEvents.current.delete(data.traceId);
       setActiveTraceEvents([]);
       setIsProcessing(false);
+      setPendingQuestion(null);
+    };
+
+    const onAskUser = (data: AskUserPayload) => {
+      setPendingQuestion({
+        eventId: data.eventId,
+        traceId: data.traceId,
+        question: data.question,
+        questionType: data.questionType,
+        options: data.options,
+        placeholder: data.placeholder,
+        timestamp: Date.now(),
+      });
+      // Add the question as an agent message in the chat
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: crypto.randomUUID(),
+          role: "agent",
+          text: data.question,
+          traceId: data.traceId,
+          timestamp: Date.now(),
+        },
+      ]);
     };
 
     socket.on("trace:event", onTraceEvent);
     socket.on("agent:message", onAgentMessage);
     socket.on("agent:error", onAgentError);
+    socket.on("agent:ask_user", onAskUser);
 
     return () => {
       socket.off("trace:event", onTraceEvent);
       socket.off("agent:message", onAgentMessage);
       socket.off("agent:error", onAgentError);
+      socket.off("agent:ask_user", onAskUser);
     };
   }, []);
 
@@ -121,5 +159,35 @@ export function useAgent() {
     socket.emit("user:message", { id, text, timestamp: Date.now() });
   }, []);
 
-  return { messages, traceEvents, activeTraceEvents, isProcessing, sendMessage };
+  const answerQuestion = useCallback((eventId: string, answer: string) => {
+    socket.emit("user:answer", { eventId, answer });
+    setPendingQuestion(null);
+    // Add the answer as a user message in the chat
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: crypto.randomUUID(),
+        role: "user",
+        text: answer,
+        timestamp: Date.now(),
+      },
+    ]);
+    // Update the matching trace:ask_user event with the answer
+    setTraceEvents((prev) =>
+      prev.map((e) =>
+        e.type === "trace:ask_user" && e.eventId === eventId
+          ? { ...e, answer }
+          : e
+      )
+    );
+    setActiveTraceEvents((prev) =>
+      prev.map((e) =>
+        e.type === "trace:ask_user" && e.eventId === eventId
+          ? { ...e, answer }
+          : e
+      )
+    );
+  }, []);
+
+  return { messages, traceEvents, activeTraceEvents, isProcessing, pendingQuestion, sendMessage, answerQuestion };
 }

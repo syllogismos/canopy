@@ -1,11 +1,13 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { serve } from "@hono/node-server";
-import { Server as SocketIOServer } from "socket.io";
+import { Server as SocketIOServer, type Socket } from "socket.io";
 import type {
   ServerToClientEvents,
   ClientToServerEvents,
   TraceEvent,
+  UserAnswerPayload,
+  TraceAskUser,
 } from "@canopy/shared";
 import { gemini, FLASH_MODEL } from "./gemini";
 import { runReactLoop } from "./agent/react-loop";
@@ -82,9 +84,33 @@ const io = new SocketIOServer<ClientToServerEvents, ServerToClientEvents>(
   }
 );
 
+function createWaitForUserAnswer(
+  socket: Socket<ClientToServerEvents, ServerToClientEvents>
+) {
+  return (eventId: string): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        socket.off("user:answer", handler);
+        reject(new Error("User did not respond within 2 minutes"));
+      }, 120_000);
+
+      const handler = (data: UserAnswerPayload) => {
+        if (data.eventId === eventId) {
+          clearTimeout(timeout);
+          socket.off("user:answer", handler);
+          resolve(data.answer);
+        }
+      };
+      socket.on("user:answer", handler);
+    });
+  };
+}
+
 io.on("connection", (socket) => {
   console.log(`Client connected: ${socket.id}`);
   socket.emit("connection:ack", { status: "connected" });
+
+  const waitForUserAnswer = createWaitForUserAnswer(socket);
 
   socket.on("ping", () => {
     console.log(`Ping from ${socket.id}`);
@@ -112,6 +138,19 @@ io.on("connection", (socket) => {
         console.error(`[trace-writer] Failed to write event:`, err)
       );
       socket.emit("trace:event", event);
+
+      // Also emit the dedicated ask_user event for the frontend
+      if (event.type === "trace:ask_user") {
+        const askEvent = event as TraceAskUser;
+        socket.emit("agent:ask_user", {
+          eventId: askEvent.eventId,
+          traceId: askEvent.traceId,
+          question: askEvent.question,
+          questionType: askEvent.questionType,
+          options: askEvent.options,
+          placeholder: askEvent.placeholder,
+        });
+      }
     };
 
     try {
@@ -119,6 +158,7 @@ io.on("connection", (socket) => {
         userMessage: message.text,
         traceId,
         emit,
+        waitForUserAnswer,
       });
       socket.emit("agent:message", { traceId, text, structuredResults });
     } catch (err: any) {
