@@ -1,0 +1,36 @@
+# dependencies
+node_modules/
+
+# env files
+.env
+.env.local
+.env.*.local
+
+# build output
+dist/
+build/
+.output/
+
+# bun
+bun.lock
+
+# logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# testing
+coverage/
+
+# temp
+*.tmp
+*.temp
