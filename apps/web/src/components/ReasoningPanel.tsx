@@ -19,7 +19,7 @@ export function ReasoningPanel({ traceEvents, isProcessing }: ReasoningPanelProp
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="px-5 py-3 border-b border-white/[0.06] flex items-center justify-between">
+      <div className="shrink-0 px-5 py-3 border-b border-white/[0.06] flex items-center justify-between bg-gray-950">
         <div className="flex items-center gap-2.5">
           <div className={`w-2 h-2 rounded-full ${isProcessing ? "bg-amber-400 animate-pulse" : "bg-gray-600"}`} />
           <span className="text-xs font-medium tracking-widest uppercase text-gray-400 font-mono">

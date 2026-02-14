@@ -75,14 +75,21 @@ interface RunReactLoopParams {
   emit: (event: TraceEvent) => void;
 }
 
+interface ReActResult {
+  text: string;
+  structuredResults: unknown[];
+}
+
 export async function runReactLoop({
   userMessage,
   traceId,
   emit,
-}: RunReactLoopParams): Promise<string> {
+}: RunReactLoopParams): Promise<ReActResult> {
   const messages: Content[] = [
     { role: "user", parts: [{ text: userMessage }] },
   ];
+
+  const structuredResults: unknown[] = [];
 
   const startTime = Date.now();
 
@@ -113,7 +120,6 @@ export async function runReactLoop({
             systemInstruction: SYSTEM_PROMPT,
             tools: [
               { functionDeclarations: toolDeclarations },
-              { googleSearch: {} },
             ],
             thinkingConfig: {
               includeThoughts: true,
@@ -219,7 +225,7 @@ export async function runReactLoop({
               status: "error",
             })
           );
-          return "I wasn't able to generate a response. Please try rephrasing your question.";
+          return { text: "I wasn't able to generate a response. Please try rephrasing your question.", structuredResults };
         }
 
         // Push the model's empty content + a nudge, then continue
@@ -256,7 +262,7 @@ export async function runReactLoop({
           status: "completed",
         })
       );
-      return text;
+      return { text, structuredResults };
     }
 
     // Function calls present — reset empty counter
@@ -294,7 +300,7 @@ export async function runReactLoop({
       let isError: boolean;
 
       try {
-        ({ result, isError } = executeTool(name, args));
+        ({ result, isError } = await executeTool(name, args));
       } catch (toolErr: any) {
         result = { error: `Tool execution failed: ${toolErr.message ?? "unknown error"}` };
         isError = true;
@@ -314,10 +320,16 @@ export async function runReactLoop({
         })
       );
 
+      // Collect structured results for the chat panel
+      const resultObj = result as Record<string, unknown>;
+      if (!isError && (resultObj?.type === "comparison" || resultObj?.type === "checklist")) {
+        structuredResults.push(resultObj);
+      }
+
       functionResponseParts.push({
         functionResponse: {
           name,
-          response: result as Record<string, unknown>,
+          response: resultObj,
         },
       });
     }
@@ -341,5 +353,5 @@ export async function runReactLoop({
     })
   );
 
-  return "I ran out of steps while working on your request. Please try again with a simpler question.";
+  return { text: "I ran out of steps while working on your request. Please try again with a simpler question.", structuredResults };
 }

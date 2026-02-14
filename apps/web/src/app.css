@@ -22,6 +22,12 @@
   }
 }
 
+/* Prevent white flash on overscroll and ensure dark bg everywhere */
+html, body, #root {
+  background-color: #030712; /* gray-950 */
+  min-height: 100%;
+}
+
 /* Thin scrollbars for the dark theme */
 * {
   scrollbar-width: thin;

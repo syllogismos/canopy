@@ -2,11 +2,10 @@ import { useEffect, useState } from "react";
 import { socket } from "./socket";
 import { useAgent } from "./hooks/useAgent";
 import { ChatPanel } from "./components/ChatPanel";
-import { ReasoningPanel } from "./components/ReasoningPanel";
 
 export default function App() {
   const [connected, setConnected] = useState(false);
-  const { messages, traceEvents, isProcessing, sendMessage } = useAgent();
+  const { messages, activeTraceEvents, isProcessing, sendMessage } = useAgent();
 
   useEffect(() => {
     socket.connect();
@@ -47,15 +46,12 @@ export default function App() {
         </div>
       </header>
 
-      <main className="flex-1 grid grid-cols-2 divide-x divide-white/[0.06] min-h-0">
+      <main className="flex-1 min-h-0">
         <ChatPanel
           messages={messages}
+          activeTraceEvents={activeTraceEvents}
           isProcessing={isProcessing}
           onSendMessage={sendMessage}
-        />
-        <ReasoningPanel
-          traceEvents={traceEvents}
-          isProcessing={isProcessing}
         />
       </main>
     </div>

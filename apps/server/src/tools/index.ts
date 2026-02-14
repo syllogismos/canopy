@@ -66,8 +66,27 @@ export const createChecklistDeclaration: FunctionDeclaration = {
   },
 };
 
+/** Web search tool — delegates to a separate Gemini call with Google Search grounding */
+export const webSearchDeclaration: FunctionDeclaration = {
+  name: "web_search",
+  description:
+    "Search the web for real-time information using Google Search. Use this to find current prices, schedules, availability, news, government scheme details, or any factual information you need to answer the user's query.",
+  parameters: {
+    type: Type.OBJECT,
+    properties: {
+      query: {
+        type: Type.STRING,
+        description:
+          "The search query (e.g. 'Mumbai to Delhi trains today', 'PM Kisan scheme eligibility 2025')",
+      },
+    },
+    required: ["query"],
+  },
+};
+
 /** All tool declarations for the ReAct loop */
 export const toolDeclarations: FunctionDeclaration[] = [
+  webSearchDeclaration,
   compareItemsDeclaration,
   createChecklistDeclaration,
 ];

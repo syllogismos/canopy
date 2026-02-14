@@ -110,7 +110,14 @@ function ToolResultCard({ event }: { event: Extract<TraceEvent, { type: "trace:t
         ) : result?.type === "checklist" ? (
           <Checklist data={result} />
         ) : result?.sources ? (
-          <SourcesList sources={result.sources} />
+          <div className="space-y-2">
+            {result.text && (
+              <pre className="text-[11px] leading-relaxed text-emerald-200/60 font-mono whitespace-pre-wrap line-clamp-6">
+                {result.text}
+              </pre>
+            )}
+            <SourcesList sources={result.sources} />
+          </div>
         ) : (
           <pre
             className={`text-[11px] leading-relaxed overflow-x-auto font-mono ${
@@ -206,7 +213,7 @@ function IterationBadge({ iteration }: { iteration: number }) {
 
 /* ─── Structured result renderers ─── */
 
-function ComparisonTable({ data }: { data: { title: string; columns: string[]; rows: string[][]; recommendation?: string } }) {
+export function ComparisonTable({ data }: { data: { title: string; columns: string[]; rows: string[][]; recommendation?: string } }) {
   return (
     <div className="space-y-2">
       <div className="text-[11px] font-medium text-emerald-200/80">{data.title}</div>
@@ -243,7 +250,7 @@ function ComparisonTable({ data }: { data: { title: string; columns: string[]; r
   );
 }
 
-function Checklist({ data }: { data: { title: string; items: { step: string; details: string; required?: boolean }[] } }) {
+export function Checklist({ data }: { data: { title: string; items: { step: string; details: string; required?: boolean }[] } }) {
   return (
     <div className="space-y-2">
       <div className="text-[11px] font-medium text-emerald-200/80">{data.title}</div>
@@ -270,20 +277,26 @@ function Checklist({ data }: { data: { title: string; items: { step: string; det
   );
 }
 
-function SourcesList({ sources }: { sources: string[] }) {
+function SourcesList({ sources }: { sources: (string | { title?: string; uri?: string })[] }) {
   return (
     <div className="flex flex-wrap gap-1">
-      {sources.map((source, i) => (
-        <span
-          key={i}
-          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-500/10 text-[10px] text-emerald-300/70"
-        >
-          <svg width="8" height="8" viewBox="0 0 16 16" fill="none" className="opacity-40">
-            <path d="M4 12l8-8M4 4h8v8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-          {source}
-        </span>
-      ))}
+      {sources.map((source, i) => {
+        const label = typeof source === "string" ? source : source.title || source.uri || "source";
+        const href = typeof source === "string" ? undefined : source.uri;
+        const Tag = href ? "a" : "span";
+        return (
+          <Tag
+            key={i}
+            {...(href ? { href, target: "_blank", rel: "noopener noreferrer" } : {})}
+            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-500/10 text-[10px] text-emerald-300/70 hover:bg-emerald-500/20 transition-colors"
+          >
+            <svg width="8" height="8" viewBox="0 0 16 16" fill="none" className="opacity-40">
+              <path d="M4 12l8-8M4 4h8v8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            {label}
+          </Tag>
+        );
+      })}
     </div>
   );
 }

@@ -71,7 +71,7 @@ export interface UserMessage {
 export interface ServerToClientEvents {
   "connection:ack": (data: { status: string }) => void;
   "trace:event": (event: TraceEvent) => void;
-  "agent:message": (data: { traceId: string; text: string }) => void;
+  "agent:message": (data: { traceId: string; text: string; structuredResults?: unknown[] }) => void;
   "agent:error": (data: { traceId: string; message: string }) => void;
 }
 

@@ -115,12 +115,12 @@ io.on("connection", (socket) => {
     };
 
     try {
-      const text = await runReactLoop({
+      const { text, structuredResults } = await runReactLoop({
         userMessage: message.text,
         traceId,
         emit,
       });
-      socket.emit("agent:message", { traceId, text });
+      socket.emit("agent:message", { traceId, text, structuredResults });
     } catch (err: any) {
       console.error(`[${traceId}] Error:`, err);
       socket.emit("agent:error", {
