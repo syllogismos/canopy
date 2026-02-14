@@ -7,6 +7,8 @@ import type {
   ClientToServerEvents,
 } from "@canopy/shared";
 import { gemini, FLASH_MODEL } from "./gemini";
+import { runReactLoop } from "./agent/react-loop";
+import { traceStore } from "./agent/trace";
 
 const app = new Hono();
 
@@ -30,6 +32,18 @@ app.get("/health/gemini", async (c) => {
   }
 });
 
+// Debug endpoints for trace inspection
+app.get("/api/traces", (c) => c.json(traceStore.list()));
+
+app.get("/api/traces/:traceId", (c) => {
+  const { traceId } = c.req.param();
+  const events = traceStore.get(traceId);
+  if (!events) {
+    return c.json({ error: "Trace not found" }, 404);
+  }
+  return c.json({ traceId, events });
+});
+
 const PORT = Number(process.env.PORT) || 3001;
 
 const httpServer = serve({ fetch: app.fetch, port: PORT }, (info) => {
@@ -49,6 +63,31 @@ io.on("connection", (socket) => {
 
   socket.on("ping", () => {
     console.log(`Ping from ${socket.id}`);
+  });
+
+  socket.on("user:message", async (message) => {
+    const traceId = crypto.randomUUID();
+    console.log(`[${traceId}] User message: ${message.text}`);
+
+    const emit = (event: import("@canopy/shared").TraceEvent) => {
+      traceStore.add(event);
+      socket.emit("trace:event", event);
+    };
+
+    try {
+      const text = await runReactLoop({
+        userMessage: message.text,
+        traceId,
+        emit,
+      });
+      socket.emit("agent:message", { traceId, text });
+    } catch (err: any) {
+      console.error(`[${traceId}] Error:`, err);
+      socket.emit("agent:error", {
+        traceId,
+        message: err.message ?? "Unknown error",
+      });
+    }
   });
 
   socket.on("disconnect", () => {

@@ -1,8 +1,12 @@
 import { useEffect, useState } from "react";
 import { socket } from "./socket";
+import { useAgent } from "./hooks/useAgent";
+import { ChatPanel } from "./components/ChatPanel";
+import { ReasoningPanel } from "./components/ReasoningPanel";
 
 export default function App() {
   const [connected, setConnected] = useState(false);
+  const { messages, traceEvents, isProcessing, sendMessage } = useAgent();
 
   useEffect(() => {
     socket.connect();
@@ -22,24 +26,37 @@ export default function App() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white flex flex-col">
-      <header className="border-b border-gray-800 px-6 py-4 flex items-center justify-between">
-        <h1 className="text-xl font-bold">Canopy</h1>
-        <span
-          className={`text-sm px-2 py-1 rounded ${connected ? "bg-green-900 text-green-300" : "bg-red-900 text-red-300"}`}
-        >
-          {connected ? "Connected" : "Disconnected"}
-        </span>
+    <div className="h-screen bg-gray-950 text-white flex flex-col font-sans">
+      <header className="border-b border-white/[0.06] px-6 py-3 flex items-center justify-between shrink-0">
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center">
+              <span className="text-[10px] font-bold text-gray-950">C</span>
+            </div>
+            <h1 className="text-sm font-semibold tracking-tight">Canopy</h1>
+          </div>
+          <span className="text-[10px] text-gray-600 font-mono">v0.1</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div
+            className={`w-1.5 h-1.5 rounded-full ${connected ? "bg-emerald-400" : "bg-red-400"}`}
+          />
+          <span className="text-[11px] text-gray-500 font-mono">
+            {connected ? "connected" : "disconnected"}
+          </span>
+        </div>
       </header>
 
-      <main className="flex-1 grid grid-cols-2 divide-x divide-gray-800">
-        <section className="p-6 flex flex-col items-center justify-center">
-          <p className="text-gray-400">Voice Panel</p>
-        </section>
-
-        <section className="p-6 flex flex-col items-center justify-center">
-          <p className="text-gray-400">Reasoning Panel</p>
-        </section>
+      <main className="flex-1 grid grid-cols-2 divide-x divide-white/[0.06] min-h-0">
+        <ChatPanel
+          messages={messages}
+          isProcessing={isProcessing}
+          onSendMessage={sendMessage}
+        />
+        <ReasoningPanel
+          traceEvents={traceEvents}
+          isProcessing={isProcessing}
+        />
       </main>
     </div>
   );
